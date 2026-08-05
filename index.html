@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Barbearia do Vitin</title>
+<meta name="description" content="Barbearia do Vitin — corte tradicional, barba na navalha e agendamento online rápido, sem ligação e sem fila.">
+<!-- Firebase: usado apenas quando o site roda fora do claude.ai, para que os agendamentos
+     sejam compartilhados de verdade entre todos os visitantes do site. Veja as instruções
+     de configuração no início do arquivo js/db.js. -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="nav">
+  <div class="logo"><span class="mark">BV</span> Barbearia do Vitin</div>
+  <ul>
+    <li><a href="#servicos">Serviços</a></li>
+    <li><a href="#barbeiros">Barbeiros</a></li>
+    <li><a href="#agendar">Agendar</a></li>
+  </ul>
+  <a class="nav-cta" href="#agendar">Agendar horário</a>
+</header>
+
+<section class="hero">
+  <p class="eyebrow">Barbearia do Vitin — bairro desde 2014</p>
+  <h1>Cabelo e barba<br>no <em>ponto certo</em>.</h1>
+  <p class="lead">Corte tradicional, navalha afiada e um café enquanto espera. Escolha o serviço, o barbeiro e o horário — sem ligação, sem fila.</p>
+  <div class="hero-actions">
+    <a class="btn-primary" href="#agendar">Agendar meu horário</a>
+    <a class="btn-ghost" href="#servicos">Ver serviços e preços</a>
+  </div>
+  <div class="whatsapp-cta-wrap">
+    <a class="btn-whatsapp" href="https://wa.me/5561999350668" target="_blank" rel="noopener noreferrer" aria-label="Chamar a Barbearia do Vitin no WhatsApp">
+      <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor" aria-hidden="true">
+        <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.87.5 3.63 1.44 5.15L2 22l5.09-1.53a9.87 9.87 0 0 0 4.95 1.33h.01c5.46 0 9.91-4.45 9.91-9.9C21.96 6.44 17.5 2 12.04 2Zm5.8 14.06c-.24.68-1.4 1.3-1.93 1.35-.5.05-1.02.24-3.43-.72-2.9-1.16-4.76-4.09-4.9-4.28-.14-.19-1.17-1.56-1.17-2.98 0-1.42.74-2.11 1-2.4.26-.29.56-.36.75-.36.19 0 .38 0 .55.01.18.01.41-.07.64.49.24.58.81 2 .88 2.14.07.14.12.31.02.5-.1.19-.15.31-.29.48-.14.17-.3.37-.43.5-.14.14-.29.29-.13.57.17.29.75 1.24 1.61 2.01 1.11.99 2.04 1.3 2.33 1.44.29.14.46.12.63-.07.17-.19.72-.84.91-1.13.19-.29.38-.24.63-.14.26.1 1.65.78 1.93.92.29.14.48.21.55.33.07.12.07.69-.17 1.37Z"/>
+      </svg>
+      <span>Chamar no WhatsApp</span>
+    </a>
+  </div>
+  <div class="hero-stats">
+    <div class="stat"><b>3</b><span>Barbeiros</span></div>
+    <div class="stat"><b>10 anos</b><span>De bairro</span></div>
+    <div class="stat"><b>Ter–Sáb</b><span>Atendimento</span></div>
+  </div>
+</section>
+
+<section id="servicos" class="services">
+  <div class="section-head">
+    <p class="eyebrow">Tabela de preços</p>
+    <h2>Serviços</h2>
+    <p>Cada serviço reserva um tempo fixo na agenda do barbeiro — por isso os horários fecham automaticamente.</p>
+  </div>
+  <div class="service-grid" id="serviceGrid"></div>
+</section>
+
+<section id="barbeiros">
+  <div class="section-head">
+    <p class="eyebrow">A equipe</p>
+    <h2>Barbeiros</h2>
+    <p>Escolha por quem você já conhece ou por especialidade.</p>
+  </div>
+  <div class="barbers-grid" id="barberGrid"></div>
+</section>
+
+<section id="agendar" class="booking">
+  <div class="section-head">
+    <p class="eyebrow">Reserve seu lugar</p>
+    <h2>Agendar horário</h2>
+    <p>5 passos rápidos. Seu horário fica reservado assim que você confirmar.</p>
+  </div>
+
+  <div class="ticket-wrap">
+    <div class="steps-track" id="stepsTrack"></div>
+    <div class="ticket-card" id="ticketCard"></div>
+  </div>
+</section>
+
+<footer>
+  <div class="f-logo">Barbearia do Vitin</div>
+  <div class="f-col">
+    <b>Endereço</b>
+    Rua das Tesouras, 128 — Centro
+  </div>
+  <div class="f-col">
+    <b>Horário</b>
+    Terça a sábado, 9h às 19h<br>Fechado aos domingos e segundas
+  </div>
+  <div class="f-col">
+    <b>Contato</b>
+    (11) 4002-8922<br>contato@barbeariadovitin.com.br
+  </div>
+</footer>
+
+<script src="js/db.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
