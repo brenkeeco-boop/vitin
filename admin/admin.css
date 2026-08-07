@@ -1,0 +1,83 @@
+/* Painel do barbeiro — reaproveita as variáveis de cor/tipografia de css/style.css */
+
+.admin-body{ min-height:100vh; }
+
+.admin-nav{ position:static; background:var(--surface); border-bottom:1px solid var(--line); backdrop-filter:none; }
+.admin-nav-right{ display:flex; align-items:center; gap:18px; }
+.admin-tag{ display:none; }
+@media(min-width:520px){ .admin-tag{ display:inline; } }
+
+.admin-main{ padding:56px 6vw 90px; max-width:1100px; margin:0 auto; }
+
+/* ---- login ---- */
+.admin-login-wrap{
+  min-height:60vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.admin-login-card{ max-width:380px; width:100%; }
+.admin-login-card h3{ font-size:26px; }
+
+/* ---- dashboard ---- */
+.admin-section-head{ margin-bottom:36px; }
+.admin-date-field{ max-width:260px; margin-bottom:36px; }
+
+.admin-grid{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:24px;
+}
+@media(min-width:860px){
+  .admin-grid{ grid-template-columns:1.3fr 1fr; align-items:start; }
+}
+
+.booked-item{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  padding:16px 0;
+  border-top:1px dashed var(--line);
+}
+.booked-item:first-child{ border-top:none; }
+.booked-item .bi-time{
+  font-family:'JetBrains Mono', monospace;
+  font-size:16px;
+  color:var(--brass-light);
+  font-weight:700;
+  min-width:56px;
+}
+.booked-item .bi-info{ flex:1; }
+.booked-item .bi-name{ font-size:15px; font-weight:600; }
+.booked-item .bi-meta{ font-size:13px; color:var(--text-dim); margin-top:2px; }
+.booked-item .bi-meta a{ color:var(--brass-light); text-decoration:none; }
+.booked-item .bi-meta a:hover{ text-decoration:underline; }
+.booked-item .bi-cancel{
+  font-family:'JetBrains Mono', monospace;
+  font-size:11px;
+  letter-spacing:0.05em;
+  text-transform:uppercase;
+  background:transparent;
+  border:1px solid var(--line);
+  color:var(--text-dim);
+  padding:8px 14px;
+  border-radius:2px;
+  cursor:pointer;
+  white-space:nowrap;
+  transition:border-color 0.15s, color 0.15s;
+}
+.booked-item .bi-cancel:hover{ border-color:var(--oxblood); color:#e18b73; }
+
+.empty-state{ color:var(--text-dim); font-size:14px; padding:8px 0; }
+
+.free-slot-badge{
+  font-family:'JetBrains Mono', monospace;
+  font-size:13px;
+  background:var(--surface-2);
+  border:1px solid var(--line);
+  color:var(--text-dim);
+  padding:10px 6px;
+  text-align:center;
+  border-radius:2px;
+}

@@ -1,27 +1,11 @@
-// ---------------- DATA ----------------
-const SERVICES = [
-  { id:'corte', name:'Corte tradicional', desc:'Tesoura e máquina, acabamento na navalha.', price:45, duration:30 },
-  { id:'barba', name:'Barba desenhada', desc:'Toalha quente, navalha e óleo pós-barba.', price:35, duration:20 },
-  { id:'combo', name:'Corte + Barba', desc:'O combo completo, com desconto.', price:70, duration:50 },
-  { id:'sobrancelha', name:'Sobrancelha', desc:'Alinhamento na navalha.', price:15, duration:10 },
-  { id:'pezinho', name:'Acabamento (pezinho)', desc:'Manutenção rápida de contorno.', price:20, duration:10 },
-];
-
-const BARBERS = [
-  { id:'marcos', name:'Marcos Silva', role:'Cortes clássicos', desc:'20 anos de navalha. Especialista em cortes sociais e barba desenhada.', initials:'MS' },
-  { id:'rafael', name:'Rafael Costa', role:'Estilos modernos', desc:'Fade, degradê e design de barba. Referência entre os mais jovens.', initials:'RC' },
-  { id:'diego', name:'Diego Almeida', role:'Barba & navalha', desc:'Foco em barboterapia e acabamento na navalha reta.', initials:'DA' },
-];
-
-const TIME_SLOTS = ['09:00','09:40','10:20','11:00','11:40','13:00','13:40','14:20','15:00','15:40','16:20','17:00','17:40','18:20'];
-
-const STEP_LABELS = ['Serviço','Barbeiro','Data','Horário','Seus dados'];
+// ---------------- ETAPAS DO AGENDAMENTO ----------------
+const STEP_LABELS = ['Serviço','Data','Horário','Seus dados'];
 
 // ---------------- STATE ----------------
 let state = {
   step: 1,
   service: null,
-  barber: null,
+  barber: BARBERS[0].id,
   date: '',
   time: null,
   name: '',
@@ -104,23 +88,6 @@ function renderTicketCard(){
       </div>
     `;
   } else if(state.step === 2){
-    html = `
-      <h3>Escolha o barbeiro</h3>
-      <p class="step-sub">Quem vai cuidar do corte hoje?</p>
-      <div class="option-grid">
-        ${BARBERS.map(b => `
-          <button type="button" class="option-card ${state.barber===b.id?'selected':''}" data-barber="${b.id}">
-            <div class="oc-title">${b.name}</div>
-            <div class="oc-sub">${b.role}</div>
-          </button>
-        `).join('')}
-      </div>
-      <div class="ticket-nav">
-        <button class="btn-ghost" id="backBtn">← Voltar</button>
-        <button class="btn-primary" id="nextBtn" ${state.barber ? '' : 'disabled style="opacity:0.4;cursor:not-allowed;"'}>Avançar →</button>
-      </div>
-    `;
-  } else if(state.step === 3){
     const today = new Date();
     const minDate = today.toISOString().split('T')[0];
     html = `
@@ -136,17 +103,17 @@ function renderTicketCard(){
         <button class="btn-primary" id="nextBtn" ${state.date ? '' : 'disabled style="opacity:0.4;cursor:not-allowed;"'}>Avançar →</button>
       </div>
     `;
-  } else if(state.step === 4){
+  } else if(state.step === 3){
     html = `
       <h3>Escolha o horário</h3>
-      <p class="step-sub">Horários em cinza já estão reservados para este barbeiro nesta data.</p>
+      <p class="step-sub">Horários em cinza já estão reservados nesta data.</p>
       <div id="timeArea"><p class="loading-msg">Carregando horários…</p></div>
       <div class="ticket-nav">
         <button class="btn-ghost" id="backBtn">← Voltar</button>
         <button class="btn-primary" id="nextBtn" ${state.time ? '' : 'disabled style="opacity:0.4;cursor:not-allowed;"'}>Avançar →</button>
       </div>
     `;
-  } else if(state.step === 5){
+  } else if(state.step === 4){
     const service = SERVICES.find(s => s.id === state.service);
     const barber = BARBERS.find(b => b.id === state.barber);
     html = `
@@ -198,12 +165,6 @@ function attachStepHandlers(){
   }
 
   if(state.step === 2){
-    document.querySelectorAll('[data-barber]').forEach(el => {
-      el.onclick = () => { state.barber = el.dataset.barber; renderAll(); };
-    });
-  }
-
-  if(state.step === 3){
     const dateInput = document.getElementById('dateInput');
     dateInput.onchange = () => {
       const val = dateInput.value;
@@ -221,11 +182,11 @@ function attachStepHandlers(){
     };
   }
 
-  if(state.step === 4){
+  if(state.step === 3){
     loadAndRenderTimeSlots();
   }
 
-  if(state.step === 5){
+  if(state.step === 4){
     const nameInput = document.getElementById('nameInput');
     const phoneInput = document.getElementById('phoneInput');
     nameInput.oninput = () => { state.name = nameInput.value; };
@@ -288,7 +249,7 @@ async function submitBooking(){
       confirmBtn.disabled = false;
       confirmBtn.textContent = 'Confirmar agendamento';
       delete bookedSlotsCache[`${state.barber}__${state.date}`];
-      state.step = 4;
+      state.step = 3;
       state.time = null;
       renderAll();
       return;
@@ -352,7 +313,7 @@ function renderConfirmation(card){
   `;
   document.getElementById('newBookingBtn').onclick = () => {
     confirmedTicket = null;
-    state = { step:1, service:null, barber:null, date:'', time:null, name:'', phone:'' };
+    state = { step:1, service:null, barber:BARBERS[0].id, date:'', time:null, name:'', phone:'' };
     bookedSlotsCache = {};
     document.getElementById('stepsTrack').style.display = 'flex';
     renderAll();

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel do barbeiro — Barbearia do Vitin</title>
+<meta name="robots" content="noindex, nofollow">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="admin.css">
+</head>
+<body class="admin-body">
+
+<header class="nav admin-nav">
+  <div class="logo"><span class="mark">BV</span> Barbearia do Vitin</div>
+  <div class="admin-nav-right">
+    <span class="eyebrow admin-tag">Painel do barbeiro</span>
+    <button class="btn-ghost" id="logoutBtn" style="display:none;">Sair</button>
+  </div>
+</header>
+
+<main class="admin-main">
+
+  <!-- TELA DE LOGIN -->
+  <section id="loginScreen" class="admin-login-wrap">
+    <div class="ticket-card admin-login-card">
+      <h3>Entrar</h3>
+      <p class="step-sub">Acesso restrito ao barbeiro.</p>
+      <form id="loginForm">
+        <div class="field">
+          <label for="userInput">Usuário</label>
+          <input type="text" id="userInput" autocomplete="username" placeholder="usuário">
+        </div>
+        <div class="field">
+          <label for="passInput">Senha</label>
+          <input type="password" id="passInput" autocomplete="current-password" placeholder="senha">
+        </div>
+        <p class="error-msg" id="loginError" style="display:none;">Usuário ou senha incorretos.</p>
+        <button type="submit" class="btn-primary" style="width:100%;">Entrar</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- PAINEL -->
+  <section id="dashboard" class="admin-dashboard" style="display:none;">
+    <div class="section-head admin-section-head">
+      <p class="eyebrow">Sua agenda</p>
+      <h2>Agendamentos</h2>
+      <p>Veja os horários já marcados e os que ainda estão livres para o dia escolhido.</p>
+    </div>
+
+    <div class="field admin-date-field">
+      <label for="adminDateInput">Data</label>
+      <input type="date" id="adminDateInput">
+    </div>
+
+    <div class="admin-grid">
+      <div class="ticket-card">
+        <h3>Agendamentos do dia</h3>
+        <p class="step-sub" id="bookedCountLabel">—</p>
+        <div id="bookedList"><p class="loading-msg">Carregando…</p></div>
+      </div>
+
+      <div class="ticket-card">
+        <h3>Horários livres</h3>
+        <p class="step-sub" id="freeCountLabel">—</p>
+        <div id="freeList" class="time-grid"><p class="loading-msg">Carregando…</p></div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<script src="../js/data.js"></script>
+<script src="../js/db.js"></script>
+<script src="admin.js"></script>
+</body>
+</html>

@@ -11,12 +11,12 @@
 //    Hosting). O Firebase vai te mostrar um objeto "firebaseConfig" — copie os valores dele
 //    para dentro do objeto abaixo.
 const FIREBASE_CONFIG = {
-  apiKey: "COLE_AQUI",
-  authDomain: "COLE_AQUI",
-  projectId: "COLE_AQUI",
-  storageBucket: "COLE_AQUI",
-  messagingSenderId: "COLE_AQUI",
-  appId: "COLE_AQUI",
+  apiKey: "AIzaSyA-OVzR1sYfl4ElpjQEJi35sI6jt7-idX0",
+  authDomain: "barbearia-do-vitin.firebaseapp.com",
+  projectId: "barbearia-do-vitin",
+  storageBucket: "barbearia-do-vitin.firebasestorage.app",
+  messagingSenderId: "681571921817",
+  appId: "1:681571921817:web:3149a832b78b13622f2d08",
 };
 
 // ---------------- STORAGE ADAPTER ----------------
