@@ -115,37 +115,66 @@ const db = (function(){
       },
 
       // ------------------------------------------------
-      // RESERVA ATÔMICA + TICKET SEQUENCIAL
+      // RESERVA ATÔMICA
       // ------------------------------------------------
+      //
+      // Essa função é a parte mais importante.
+      //
+      // Ela verifica e cria o horário dentro da MESMA
+      // transação do Firestore.
+      //
+      // Portanto:
+      //
+      // Cliente A -> consegue criar
+      // Cliente B -> recebe horário ocupado
+      //
+      // mesmo que os dois cliquem praticamente juntos.
+      //
 
       async reserveSlot(slotKey, payload){
 
         const slotRef = col.doc(encodeKey(slotKey));
         const counterRef = col.doc('ticket-counter');
 
-        // Descobre o maior ticket já existente. Isso corrige uma
-        // numeração antiga que tenha ficado fora de ordem.
-        const allSlots = await col
-          .where(firebase.firestore.FieldPath.documentId(), '>=', 'slot:')
-          .where(firebase.firestore.FieldPath.documentId(), '<', 'slot:\uf8ff')
-          .get();
+        // Se ainda não existe contador, descobrimos o maior ticket
+        // já existente para continuar a sequência sem repetir números.
+        let initialCounter = 0;
 
-        let highestExistingTicket = 0;
+        try{
+          const existingCounter = await counterRef.get();
 
-        allSlots.docs.forEach(doc => {
-          try{
-            const raw = doc.data().value;
-            const booking = typeof raw === 'string' ? JSON.parse(raw) : raw;
-            const n = parseInt(booking && booking.ticket, 10);
-            if(Number.isFinite(n) && n > highestExistingTicket){
-              highestExistingTicket = n;
+          if(existingCounter.exists){
+            const n = parseInt(existingCounter.data().value, 10);
+            if(Number.isFinite(n)) initialCounter = n;
+          } else {
+            const prefix = encodeKey('slot:');
+            const snap = await col
+              .where(firebase.firestore.FieldPath.documentId(), '>=', prefix)
+              .where(firebase.firestore.FieldPath.documentId(), '<', prefix + '\uf8ff')
+              .get();
+
+            for(const doc of snap.docs){
+              try{
+                const raw = doc.data().value;
+                const data = typeof raw === 'string' ? JSON.parse(raw) : raw;
+                const n = parseInt(data && data.ticket, 10);
+                if(Number.isFinite(n) && n > initialCounter){
+                  initialCounter = n;
+                }
+              }catch(e){}
             }
-          }catch(e){}
-        });
+          }
+        }catch(e){
+          // O contador será inicializado em 0 dentro da transação.
+          // Se as regras não permitirem a leitura, o erro real da
+          // transação será retornado ao chamador.
+        }
 
         return await firestore.runTransaction(async transaction => {
 
+          // Todas as leituras acontecem antes das escritas.
           const slotDoc = await transaction.get(slotRef);
+          const counterDoc = await transaction.get(counterRef);
 
           if(slotDoc.exists){
             const error = new Error('SLOT_ALREADY_BOOKED');
@@ -153,30 +182,26 @@ const db = (function(){
             throw error;
           }
 
-          const counterDoc = await transaction.get(counterRef);
-
-          let currentCounter = 0;
+          let currentTicket = initialCounter;
 
           if(counterDoc.exists){
-            const currentValue =
-              parseInt(counterDoc.data().value, 10);
-
-            if(!isNaN(currentValue)){
-              currentCounter = currentValue;
+            const stored = parseInt(counterDoc.data().value, 10);
+            if(Number.isFinite(stored)){
+              currentTicket = stored;
             }
           }
 
-          // Sempre usa o maior número já encontrado + 1.
-          // Assim a sequência não volta para trás.
-          const ticketNum =
-            Math.max(currentCounter, highestExistingTicket) + 1;
+          const ticketNum = currentTicket + 1;
 
           const finalPayload = {
             ...payload,
             ticket: ticketNum
           };
 
-          transaction.create(slotRef, {
+          // IMPORTANTE: usamos set(), que é suportado pelo SDK Web/compat.
+          // Como verificamos a existência dentro da mesma transação,
+          // somente uma tentativa consegue ocupar o horário.
+          transaction.set(slotRef, {
             value: JSON.stringify(finalPayload)
           });
 
@@ -185,101 +210,9 @@ const db = (function(){
           });
 
           return finalPayload;
-
         });
-
-      },
-
-      // ------------------------------------------------
-      // LOCALIZA AGENDAMENTO PARA CANCELAMENTO
-      // Valida ticket + nome + telefone.
-      // ------------------------------------------------
-
-      async findBooking(ticket, name, phone){
-
-        const snap = await col
-          .where(
-            firebase.firestore.FieldPath.documentId(),
-            '>=',
-            'slot:'
-          )
-          .where(
-            firebase.firestore.FieldPath.documentId(),
-            '<',
-            'slot:\uf8ff'
-          )
-          .get();
-
-        const normalizedTicket = String(ticket || '').trim();
-        const normalizedName = normalizeText(name);
-        const normalizedPhone = onlyDigits(phone);
-
-        for(const doc of snap.docs){
-
-          try{
-
-            const raw = doc.data().value;
-            const booking = typeof raw === 'string'
-              ? JSON.parse(raw)
-              : raw;
-
-            if(!booking || !booking.ticket) continue;
-
-            const sameTicket =
-              String(booking.ticket) === normalizedTicket;
-
-            const sameName =
-              normalizeText(booking.name) === normalizedName;
-
-            const samePhone =
-              onlyDigits(booking.phone) === normalizedPhone;
-
-            if(sameTicket && sameName && samePhone){
-
-              return {
-                key: decodeKey(doc.id),
-                data: booking
-              };
-
-            }
-
-          }catch(e){
-            console.warn('Agendamento inválido ignorado:', doc.id);
-          }
-
-        }
-
-        return null;
-      },
-
-      // ------------------------------------------------
-      // CANCELAMENTO ATÔMICO
-      // Exclui a reserva e libera o horário.
-      // ------------------------------------------------
-
-      async cancelBooking(slotKey){
-
-        const slotRef = col.doc(encodeKey(slotKey));
-
-        return await firestore.runTransaction(async transaction => {
-
-          const slotDoc = await transaction.get(slotRef);
-
-          if(!slotDoc.exists){
-            const error = new Error('BOOKING_NOT_FOUND');
-            error.code = 'BOOKING_NOT_FOUND';
-            throw error;
-          }
-
-          transaction.delete(slotRef);
-
-          return {
-            cancelled: true
-          };
-
-        });
-
       }
+
 
     };
 
@@ -304,7 +237,9 @@ const db = (function(){
         localStorage.getItem(PREFIX + key);
 
       if(raw === null){
-        throw new Error('Chave não encontrada: ' + key);
+        throw new Error(
+          'Chave não encontrada: ' + key
+        );
       }
 
       return {
@@ -316,7 +251,10 @@ const db = (function(){
 
     async set(key, value){
 
-      localStorage.setItem(PREFIX + key, value);
+      localStorage.setItem(
+        PREFIX + key,
+        value
+      );
 
       return {
         key,
@@ -327,7 +265,9 @@ const db = (function(){
 
     async delete(key){
 
-      localStorage.removeItem(PREFIX + key);
+      localStorage.removeItem(
+        PREFIX + key
+      );
 
       return {
         key,
@@ -339,14 +279,27 @@ const db = (function(){
     async list(prefix){
 
       const keys = [];
-      const search = PREFIX + (prefix || '');
 
-      for(let i = 0; i < localStorage.length; i++){
+      const search =
+        PREFIX + (prefix || '');
+
+      for(
+        let i = 0;
+        i < localStorage.length;
+        i++
+      ){
 
         const k = localStorage.key(i);
 
-        if(k && k.startsWith(search)){
-          keys.push(k.slice(PREFIX.length));
+        if(
+          k &&
+          k.startsWith(search)
+        ){
+
+          keys.push(
+            k.slice(PREFIX.length)
+          );
+
         }
 
       }
@@ -363,15 +316,12 @@ const db = (function(){
       let last = '';
 
       const refresh = async () => {
-
         const result = await this.list(prefix);
         const signature = JSON.stringify(result.keys || []);
-
         if(signature !== last){
           last = signature;
           callback(result);
         }
-
       };
 
       refresh();
@@ -381,27 +331,37 @@ const db = (function(){
       return () => clearInterval(timer);
     },
 
+    // Fallback para o caso do Firebase não estar disponível.
     async reserveSlot(slotKey, payload){
 
       const existing =
-        localStorage.getItem(PREFIX + slotKey);
+        localStorage.getItem(
+          PREFIX + slotKey
+        );
 
       if(existing){
 
-        const error = new Error('SLOT_ALREADY_BOOKED');
-        error.code = 'SLOT_ALREADY_BOOKED';
+        const error =
+          new Error('SLOT_ALREADY_BOOKED');
+
+        error.code =
+          'SLOT_ALREADY_BOOKED';
+
         throw error;
 
       }
 
       const counterRaw =
-        localStorage.getItem(PREFIX + 'ticket-counter');
+        localStorage.getItem(
+          PREFIX + 'ticket-counter'
+        );
 
-      let ticketNum = 1;
+      let ticketNum = 101;
 
       if(counterRaw){
 
-        const current = parseInt(counterRaw, 10);
+        const current =
+          parseInt(counterRaw, 10);
 
         if(!isNaN(current)){
           ticketNum = current + 1;
@@ -425,82 +385,13 @@ const db = (function(){
       );
 
       return finalPayload;
-    },
 
-    async findBooking(ticket, name, phone){
-
-      const normalizedTicket = String(ticket || '').trim();
-      const normalizedName = normalizeText(name);
-      const normalizedPhone = onlyDigits(phone);
-
-      const result = await this.list('slot:');
-
-      for(const suffix of result.keys || []){
-
-        const key = 'slot:' + suffix;
-
-        try{
-
-          const rec = await this.get(key);
-
-          const booking = JSON.parse(rec.value);
-
-          if(
-            String(booking.ticket) === normalizedTicket &&
-            normalizeText(booking.name) === normalizedName &&
-            onlyDigits(booking.phone) === normalizedPhone
-          ){
-
-            return {
-              key,
-              data: booking
-            };
-
-          }
-
-        }catch(e){}
-
-      }
-
-      return null;
-    },
-
-    async cancelBooking(slotKey){
-
-      const existing =
-        localStorage.getItem(PREFIX + slotKey);
-
-      if(!existing){
-
-        const error = new Error('BOOKING_NOT_FOUND');
-        error.code = 'BOOKING_NOT_FOUND';
-        throw error;
-
-      }
-
-      localStorage.removeItem(PREFIX + slotKey);
-
-      return {
-        cancelled: true
-      };
     }
 
   };
 
 })();
 
-function normalizeText(value){
-  return String(value || '')
-    .trim()
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/\s+/g, ' ');
-}
-
-function onlyDigits(value){
-  return String(value || '').replace(/\D/g, '');
-}
 
 // Firestore doc IDs não podem conter "/".
 function encodeKey(key){

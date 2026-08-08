@@ -98,7 +98,7 @@ async function loadDay(date){
         <div class="booked-item" data-time="${b.time}">
           <span class="bi-time">${b.time}</span>
           <div class="bi-info">
-            <div class="bi-name">${escapeHtml(b.data.name)}</div>
+            <div class="bi-name">${escapeHtml(b.data.name)} · Ticket ${String(b.data.ticket ?? '').padStart(3,'0')}</div>
             <div class="bi-meta">${escapeHtml(b.data.service)} · ${money(b.data.price)} · <a href="https://wa.me/55${onlyDigits(b.data.phone)}" target="_blank" rel="noopener noreferrer">${escapeHtml(b.data.phone)}</a></div>
           </div>
           <button type="button" class="bi-cancel" data-cancel="${b.time}">Cancelar</button>

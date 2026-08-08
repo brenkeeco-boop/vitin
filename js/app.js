@@ -310,6 +310,11 @@ async function submitBooking(){
   try{
     const service = SERVICES.find(s => s.id === state.service);
     const barber = BARBERS.find(b => b.id === state.barber);
+
+    if(!service || !barber){
+      throw new Error('Serviço ou barbeiro não encontrado.');
+    }
+
     const slotKey = `slot:${state.barber}:${state.date}:${state.time}`;
 
     const payload = {
@@ -323,32 +328,9 @@ async function submitBooking(){
       createdAt: new Date().toISOString(),
     };
 
-    // A operação precisa ser atômica no Firestore.
-    // Se alguém ocupar o horário antes desta transação, ela falha.
-    let finalPayload;
-
-    if(typeof db.reserveSlot === 'function'){
-      finalPayload = await db.reserveSlot(slotKey, payload);
-    } else {
-      // Compatibilidade com adapters antigos.
-      const existing = await db.get(slotKey, true).catch(() => null);
-      if(existing){
-        const conflict = new Error('SLOT_TAKEN');
-        conflict.code = 'SLOT_TAKEN';
-        throw conflict;
-      }
-
-      let ticketNum = 101;
-      const counter = await db.get('ticket-counter', true).catch(() => null);
-      if(counter && counter.value){
-        const current = parseInt(counter.value, 10);
-        if(Number.isFinite(current)) ticketNum = current + 1;
-      }
-
-      finalPayload = {...payload, ticket: ticketNum};
-      await db.set('ticket-counter', String(ticketNum), true);
-      await db.set(slotKey, JSON.stringify(finalPayload), true);
-    }
+    // Reserva atômica: o horário e o próximo ticket são definidos
+    // dentro da mesma transação do Firestore.
+    const finalPayload = await db.reserveSlot(slotKey, payload);
 
     confirmedTicket = finalPayload;
     stopWatchingSlots();
@@ -357,7 +339,11 @@ async function submitBooking(){
   } catch(err){
     console.error('Erro ao confirmar agendamento', err);
 
-    if(err && (err.code === 'SLOT_TAKEN' || err.message === 'SLOT_TAKEN')){
+    const code = err && err.code ? String(err.code) : '';
+    const message = err && err.message ? String(err.message) : '';
+
+    if(code === 'SLOT_ALREADY_BOOKED' || code === 'SLOT_TAKEN' ||
+       message === 'SLOT_ALREADY_BOOKED' || message === 'SLOT_TAKEN'){
       errEl.textContent = 'Esse horário acabou de ser reservado por outra pessoa. Escolha outro.';
       errEl.style.display = 'block';
 
@@ -368,7 +354,8 @@ async function submitBooking(){
       return;
     }
 
-    errEl.textContent = 'Algo deu errado ao confirmar. Tente novamente.';
+    // Mostra uma mensagem amigável, sem expor detalhes internos.
+    errEl.textContent = 'Não foi possível confirmar agora. Atualize a página e tente novamente.';
     errEl.style.display = 'block';
     confirmBtn.disabled = false;
     confirmBtn.textContent = 'Confirmar agendamento';
@@ -381,7 +368,7 @@ function renderConfirmation(card){
   card.innerHTML = `
     <div class="confirm-ticket">
       <div class="ticket-label">Seu horário está reservado</div>
-      <div class="ticket-num">Nº ${String(confirmedTicket.ticket).padStart(3, '0')}</div>
+      <div class="ticket-num">Nº ${String(confirmedTicket.ticket).padStart(3,'0')}</div>
       <hr>
       <div class="ct-row"><span>Serviço</span><span>${escapeHtml(confirmedTicket.service)}</span></div>
       <div class="ct-row"><span>Barbeiro</span><span>${escapeHtml(confirmedTicket.barber)}</span></div>
@@ -389,13 +376,22 @@ function renderConfirmation(card){
       <div class="ct-row"><span>Horário</span><span>${escapeHtml(confirmedTicket.time)}</span></div>
       <div class="ct-row"><span>Valor</span><span>${money(confirmedTicket.price)}</span></div>
       <hr>
-      <p style="font-size:13px; color:var(--text-dim); margin-bottom:20px;">Guarde o número da sua senha. Chegue com 5 minutos de antecedência.</p>
-      <div class="confirm-actions">
-        <button class="btn-primary" id="newBookingBtn">Agendar outro horário</button>
-        <button class="btn-cancel" id="cancelThisBookingBtn" type="button">Cancelar este horário</button>
+      <p style="font-size:13px; color:var(--text-dim); margin-bottom:20px;">Guarde seu ticket. Para cancelar pelo site, use o número do ticket, seu nome e telefone.</p>
+      <div class="confirmation-actions">
+        <button class="btn-danger-outline" id="cancelMyBookingBtn" type="button">Cancelar este horário</button>
+        <button class="btn-primary" id="newBookingBtn" type="button">Agendar outro horário</button>
       </div>
     </div>
   `;
+
+  document.getElementById('cancelMyBookingBtn').onclick = () => {
+    document.getElementById('cancelTicketInput').value = String(confirmedTicket.ticket).padStart(3,'0');
+    document.getElementById('cancelNameInput').value = confirmedTicket.name || '';
+    document.getElementById('cancelPhoneInput').value = confirmedTicket.phone || '';
+    document.getElementById('cancelResult').textContent = '';
+    document.getElementById('cancelResult').className = 'cancel-result';
+    document.getElementById('cancelar').scrollIntoView({behavior:'smooth'});
+  };
 
   document.getElementById('newBookingBtn').onclick = () => {
     confirmedTicket = null;
@@ -412,166 +408,129 @@ function renderConfirmation(card){
     renderAll();
     document.getElementById('agendar').scrollIntoView({behavior:'smooth'});
   };
-
-  document.getElementById('cancelThisBookingBtn').onclick = () => {
-    const ticketInput = document.getElementById('cancelTicket');
-    const nameInput = document.getElementById('cancelName');
-    const phoneInput = document.getElementById('cancelPhone');
-
-    if(ticketInput) ticketInput.value = confirmedTicket.ticket;
-    if(nameInput) nameInput.value = confirmedTicket.name || state.name || '';
-    if(phoneInput) phoneInput.value = confirmedTicket.phone || state.phone || '';
-
-    document.getElementById('cancelError').style.display = 'none';
-    document.getElementById('cancelSuccess').style.display = 'none';
-    document.getElementById('cancelPreview').style.display = 'none';
-
-    document.getElementById('cancelar').scrollIntoView({behavior:'smooth'});
-  };
 }
 
-async function handleCancellationSubmit(event){
-  event.preventDefault();
+function normalizeName(value){
+  return String(value || '').trim().toLocaleLowerCase('pt-BR').replace(/\s+/g,' ');
+}
 
-  const ticket = document.getElementById('cancelTicket').value.trim();
-  const name = document.getElementById('cancelName').value.trim();
-  const phone = document.getElementById('cancelPhone').value.trim();
+function normalizePhone(value){
+  return String(value || '').replace(/\D/g,'');
+}
 
-  const errorEl = document.getElementById('cancelError');
-  const successEl = document.getElementById('cancelSuccess');
-  const preview = document.getElementById('cancelPreview');
-  const btn = document.getElementById('findCancelBtn');
+async function findBookingForCancellation(ticket, name, phone){
+  const wantedTicket = String(ticket || '').replace(/\D/g,'').replace(/^0+/, '') || '0';
+  const wantedName = normalizeName(name);
+  const wantedPhone = normalizePhone(phone);
 
-  errorEl.style.display = 'none';
-  successEl.style.display = 'none';
-  preview.style.display = 'none';
-
-  if(!ticket || !name || !phone){
-    errorEl.textContent = 'Preencha ticket, nome e telefone.';
-    errorEl.style.display = 'block';
-    return;
+  if(!wantedTicket || !wantedName || !wantedPhone){
+    return null;
   }
 
+  const result = await db.list('slot:');
+  const keys = result && result.keys ? result.keys : [];
+
+  for(const suffix of keys){
+    const key = `slot:${suffix}`;
+
+    try{
+      const record = await db.get(key);
+      const data = JSON.parse(record.value || '{}');
+
+      const savedTicket = String(data.ticket ?? '').replace(/\D/g,'').replace(/^0+/, '') || '0';
+
+      if(
+        savedTicket === wantedTicket &&
+        normalizeName(data.name) === wantedName &&
+        normalizePhone(data.phone) === wantedPhone
+      ){
+        return { key, data };
+      }
+    }catch(e){
+      // Um agendamento pode ser removido enquanto a busca está acontecendo.
+    }
+  }
+
+  return null;
+}
+
+async function cancelMyBooking(){
+  const btn = document.getElementById('cancelSubmitBtn');
+  const resultEl = document.getElementById('cancelResult');
+
+  const ticket = document.getElementById('cancelTicketInput').value;
+  const name = document.getElementById('cancelNameInput').value;
+  const phone = document.getElementById('cancelPhoneInput').value;
+
+  resultEl.className = 'cancel-result';
+  resultEl.textContent = 'Localizando seu agendamento…';
   btn.disabled = true;
-  btn.textContent = 'Consultando…';
 
   try{
+    const booking = await findBookingForCancellation(ticket, name, phone);
 
-    const found = await db.findBooking(ticket, name, phone);
-
-    if(!found){
-      errorEl.textContent = 'Não encontramos um agendamento com esses três dados. Confira o ticket, o nome e o telefone.';
-      errorEl.style.display = 'block';
-      btn.disabled = false;
-      btn.textContent = 'Consultar agendamento';
+    if(!booking){
+      resultEl.className = 'cancel-result error';
+      resultEl.textContent = 'Não encontramos um agendamento com esses dados. Confira ticket, nome e telefone.';
       return;
     }
 
-    const booking = found.data;
+    const confirmed = window.confirm(
+      `Cancelar o horário de ${booking.data.time} do dia ${formatDate(booking.data.date)}?`
+    );
 
-    preview.innerHTML = `
-      <div class="cancel-preview-title">Agendamento encontrado</div>
-      <div class="cancel-preview-grid">
-        <div><span>Ticket</span><b>${escapeHtml(String(booking.ticket))}</b></div>
-        <div><span>Nome</span><b>${escapeHtml(booking.name)}</b></div>
-        <div><span>Serviço</span><b>${escapeHtml(booking.service)}</b></div>
-        <div><span>Data</span><b>${formatDate(booking.date)}</b></div>
-        <div><span>Horário</span><b>${escapeHtml(booking.time)}</b></div>
-      </div>
-      <p>Ao confirmar, o horário <strong>${escapeHtml(booking.time)}</strong> ficará disponível novamente para outros clientes.</p>
-      <button type="button" class="btn-cancel" id="confirmCancelBtn">Sim, cancelar meu horário</button>
-    `;
-
-    preview.style.display = 'block';
-
-    document.getElementById('confirmCancelBtn').onclick = async () => {
-
-      const confirmBtn = document.getElementById('confirmCancelBtn');
-      confirmBtn.disabled = true;
-      confirmBtn.textContent = 'Cancelando…';
-
-      try{
-
-        await db.cancelBooking(found.key);
-
-        // Libera imediatamente a seleção atual se o cliente
-        // estiver com a agenda aberta em outra parte da página.
-        if(
-          state.date === booking.date &&
-          state.time === booking.time
-        ){
-          state.time = null;
-        }
-
-        confirmedTicket = null;
-
-        successEl.textContent =
-          `✅ Horário das ${booking.time} do dia ${formatDate(booking.date)} cancelado com sucesso. O horário já está disponível novamente.`;
-
-        successEl.style.display = 'block';
-
-        preview.style.display = 'none';
-
-        document.getElementById('cancelForm').reset();
-
-        btn.disabled = false;
-        btn.textContent = 'Consultar agendamento';
-
-        // Se o usuário ainda estiver no fluxo de agendamento,
-        // atualiza a lista de horários.
-        if(state.step === 3){
-          setTimeout(() => loadAndWatchTimeSlots(), 100);
-        }
-
-      }catch(err){
-
-        console.error('Erro ao cancelar agendamento:', err);
-
-        if(err && err.code === 'BOOKING_NOT_FOUND'){
-          errorEl.textContent =
-            'Esse agendamento não está mais disponível. Talvez já tenha sido cancelado.';
-        }else{
-          errorEl.textContent =
-            'Não foi possível cancelar o agendamento agora. Tente novamente.';
-        }
-
-        errorEl.style.display = 'block';
-
-        confirmBtn.disabled = false;
-        confirmBtn.textContent = 'Sim, cancelar meu horário';
-
-      }
-
-    };
-
-  }catch(err){
-
-    console.error('Erro ao consultar agendamento:', err);
-
-    errorEl.textContent =
-      'Não foi possível consultar o agendamento agora. Tente novamente.';
-
-    errorEl.style.display = 'block';
-
-  }finally{
-
-    if(btn.textContent === 'Consultando…'){
-      btn.disabled = false;
-      btn.textContent = 'Consultar agendamento';
+    if(!confirmed){
+      resultEl.className = 'cancel-result';
+      resultEl.textContent = 'Cancelamento interrompido.';
+      return;
     }
 
-  }
+    await db.delete(booking.key);
 
+    resultEl.className = 'cancel-result success';
+    resultEl.textContent = `Agendamento Nº ${String(booking.data.ticket).padStart(3,'0')} cancelado. O horário ${booking.data.time} já está disponível novamente.`;
+
+    if(
+      confirmedTicket &&
+      String(confirmedTicket.ticket) === String(booking.data.ticket) &&
+      normalizePhone(confirmedTicket.phone) === normalizePhone(phone)
+    ){
+      confirmedTicket = null;
+      document.getElementById('stepsTrack').style.display = 'flex';
+      state = {
+        step:1,
+        service:null,
+        barber:BARBERS[0].id,
+        date:'',
+        time:null,
+        name:'',
+        phone:''
+      };
+      renderAll();
+    }
+
+    // Limpa os campos depois do sucesso.
+    document.getElementById('cancelTicketInput').value = '';
+    document.getElementById('cancelNameInput').value = '';
+    document.getElementById('cancelPhoneInput').value = '';
+
+  }catch(err){
+    console.error('Erro ao cancelar agendamento', err);
+    resultEl.className = 'cancel-result error';
+    resultEl.textContent = 'Não foi possível cancelar agora. Tente novamente.';
+  }finally{
+    btn.disabled = false;
+  }
 }
 
-function initCancellation(){
-
+function setupCancellationForm(){
   const form = document.getElementById('cancelForm');
+  if(!form) return;
 
-  if(form){
-    form.addEventListener('submit', handleCancellationSubmit);
-  }
-
+  form.addEventListener('submit', event => {
+    event.preventDefault();
+    cancelMyBooking();
+  });
 }
 
 function renderAll(){
@@ -581,5 +540,5 @@ function renderAll(){
 
 renderServiceGrid();
 renderBarberGrid();
-initCancellation();
+setupCancellationForm();
 renderAll();
