@@ -1,0 +1,48 @@
+
+/* Acesso discreto do barbeiro */
+.nav-actions{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.admin-access{
+  width:28px;
+  height:28px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  color:var(--text-dim);
+  text-decoration:none;
+  font-size:13px;
+  opacity:.55;
+  border:1px solid transparent;
+  border-radius:50%;
+  transition:opacity .2s ease, color .2s ease, border-color .2s ease;
+}
+.admin-access:hover,
+.admin-access:focus-visible{
+  opacity:1;
+  color:var(--brass-light);
+  border-color:var(--line);
+}
+@media(max-width:720px){
+  .nav-actions{gap:4px;}
+  .admin-access{width:26px;height:26px;}
+}
+
+/* Horário ocupado */
+.time-slot.booked{
+  opacity:.3;
+  text-decoration:line-through;
+  cursor:not-allowed;
+}
+
+/* Logo agora é um link — mantém a aparência original, sem sublinhado */
+.nav a.logo{
+  text-decoration:none;
+  transition:opacity .2s ease;
+}
+.nav a.logo:hover,
+.nav a.logo:focus-visible{
+  opacity:.85;
+}

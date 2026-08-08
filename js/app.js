@@ -1,7 +1,6 @@
 // ---------------- ETAPAS DO AGENDAMENTO ----------------
 const STEP_LABELS = ['Serviço','Data','Horário','Seus dados'];
 
-// ---------------- STATE ----------------
 let state = {
   step: 1,
   service: null,
@@ -12,10 +11,10 @@ let state = {
   phone: '',
 };
 
-let bookedSlotsCache = {}; // key: barber+date -> array of booked times
+let bookedSlotsCache = {};
 let confirmedTicket = null;
+let stopSlotWatch = null;
 
-// ---------------- RENDER: static grids ----------------
 function money(n){ return 'R$ ' + n.toFixed(2).replace('.', ','); }
 
 function renderServiceGrid(){
@@ -45,7 +44,6 @@ function renderBarberGrid(){
   `).join('');
 }
 
-// ---------------- STEP INDICATOR ----------------
 function renderSteps(){
   const track = document.getElementById('stepsTrack');
   track.innerHTML = STEP_LABELS.map((label, idx) => {
@@ -60,7 +58,6 @@ function renderSteps(){
   }).join('');
 }
 
-// ---------------- STEP CONTENT ----------------
 function renderTicketCard(){
   const card = document.getElementById('ticketCard');
 
@@ -70,6 +67,7 @@ function renderTicketCard(){
   }
 
   let html = '';
+
   if(state.step === 1){
     html = `
       <h3>Escolha o serviço</h3>
@@ -90,6 +88,7 @@ function renderTicketCard(){
   } else if(state.step === 2){
     const today = new Date();
     const minDate = today.toISOString().split('T')[0];
+
     html = `
       <h3>Escolha a data</h3>
       <p class="step-sub">Atendemos de terça a sábado.</p>
@@ -106,7 +105,7 @@ function renderTicketCard(){
   } else if(state.step === 3){
     html = `
       <h3>Escolha o horário</h3>
-      <p class="step-sub">Horários em cinza já estão reservados nesta data.</p>
+      <p class="step-sub">Horários já reservados ficam indisponíveis automaticamente.</p>
       <div id="timeArea"><p class="loading-msg">Carregando horários…</p></div>
       <div class="ticket-nav">
         <button class="btn-ghost" id="backBtn">← Voltar</button>
@@ -116,6 +115,7 @@ function renderTicketCard(){
   } else if(state.step === 4){
     const service = SERVICES.find(s => s.id === state.service);
     const barber = BARBERS.find(b => b.id === state.barber);
+
     html = `
       <h3>Seus dados</h3>
       <p class="step-sub">Só para confirmar o seu horário.</p>
@@ -127,11 +127,11 @@ function renderTicketCard(){
       </div>
       <div class="field">
         <label for="nameInput">Nome completo</label>
-        <input type="text" id="nameInput" value="${state.name}" placeholder="Como podemos te chamar">
+        <input type="text" id="nameInput" value="${escapeHtml(state.name)}" placeholder="Como podemos te chamar">
       </div>
       <div class="field">
         <label for="phoneInput">Telefone / WhatsApp</label>
-        <input type="tel" id="phoneInput" value="${state.phone}" placeholder="(11) 90000-0000">
+        <input type="tel" id="phoneInput" value="${escapeHtml(state.phone)}" placeholder="(11) 90000-0000">
       </div>
       <p class="error-msg" id="formError" style="display:none;"></p>
       <div class="ticket-nav">
@@ -145,6 +145,12 @@ function renderTicketCard(){
   attachStepHandlers();
 }
 
+function escapeHtml(value){
+  return String(value || '').replace(/[&<>"']/g, ch => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'
+  }[ch]));
+}
+
 function formatDate(iso){
   if(!iso) return '';
   const [y,m,d] = iso.split('-');
@@ -153,23 +159,39 @@ function formatDate(iso){
 
 function attachStepHandlers(){
   const backBtn = document.getElementById('backBtn');
-  if(backBtn) backBtn.onclick = () => { state.step -= 1; renderAll(); };
+  if(backBtn){
+    backBtn.onclick = () => {
+      stopWatchingSlots();
+      state.step -= 1;
+      renderAll();
+    };
+  }
 
   const nextBtn = document.getElementById('nextBtn');
-  if(nextBtn) nextBtn.onclick = () => { state.step += 1; renderAll(); };
+  if(nextBtn){
+    nextBtn.onclick = () => {
+      state.step += 1;
+      renderAll();
+    };
+  }
 
   if(state.step === 1){
     document.querySelectorAll('[data-service]').forEach(el => {
-      el.onclick = () => { state.service = el.dataset.service; renderAll(); };
+      el.onclick = () => {
+        state.service = el.dataset.service;
+        renderAll();
+      };
     });
   }
 
   if(state.step === 2){
     const dateInput = document.getElementById('dateInput');
+
     dateInput.onchange = () => {
       const val = dateInput.value;
-      const day = new Date(val + 'T12:00:00').getDay(); // 0=Sun,1=Mon
+      const day = new Date(val + 'T12:00:00').getDay();
       const err = document.getElementById('dateError');
+
       if(day === 0 || day === 1){
         err.style.display = 'block';
         state.date = '';
@@ -178,46 +200,87 @@ function attachStepHandlers(){
         state.date = val;
         state.time = null;
       }
+
       renderAll();
     };
   }
 
   if(state.step === 3){
-    loadAndRenderTimeSlots();
+    loadAndWatchTimeSlots();
   }
 
   if(state.step === 4){
     const nameInput = document.getElementById('nameInput');
     const phoneInput = document.getElementById('phoneInput');
+
     nameInput.oninput = () => { state.name = nameInput.value; };
     phoneInput.oninput = () => { state.phone = phoneInput.value; };
+
     document.getElementById('confirmBtn').onclick = submitBooking;
   }
 }
 
-async function loadAndRenderTimeSlots(){
+function stopWatchingSlots(){
+  if(typeof stopSlotWatch === 'function'){
+    try{ stopSlotWatch(); }catch(e){}
+  }
+  stopSlotWatch = null;
+}
+
+async function loadAndWatchTimeSlots(){
+  stopWatchingSlots();
+
   const area = document.getElementById('timeArea');
-  const cacheKey = `${state.barber}__${state.date}`;
-  try{
-    let booked = bookedSlotsCache[cacheKey];
-    if(!booked){
-      const result = await db.list(`slot:${state.barber}:${state.date}:`, true);
-      booked = (result && result.keys ? result.keys : []).map(k => k.split(':').pop());
-      bookedSlotsCache[cacheKey] = booked;
+  const prefix = `slot:${state.barber}:${state.date}:`;
+
+  const renderSlots = result => {
+    const booked = (result && result.keys ? result.keys : []);
+
+    // Se o horário selecionado acabou de ser reservado por outra pessoa,
+    // remove a seleção imediatamente.
+    if(state.time && booked.includes(state.time)){
+      state.time = null;
     }
+
     area.innerHTML = `<div class="time-grid">
       ${TIME_SLOTS.map(t => {
         const isBooked = booked.includes(t);
         const isSelected = state.time === t;
-        return `<button type="button" class="time-slot ${isSelected?'selected':''}" data-time="${t}" ${isBooked?'disabled':''}>${t}</button>`;
+
+        return `<button
+          type="button"
+          class="time-slot ${isSelected?'selected':''} ${isBooked?'booked':''}"
+          data-time="${t}"
+          ${isBooked?'disabled':''}
+          aria-disabled="${isBooked?'true':'false'}"
+        >${t}</button>`;
       }).join('')}
     </div>`;
+
+    const nextBtn = document.getElementById('nextBtn');
+    if(nextBtn){
+      nextBtn.disabled = !state.time;
+      nextBtn.style.opacity = state.time ? '1' : '0.4';
+      nextBtn.style.cursor = state.time ? 'pointer' : 'not-allowed';
+    }
+
     document.querySelectorAll('.time-slot:not(:disabled)').forEach(el => {
       el.onclick = () => {
         state.time = el.dataset.time;
         renderAll();
       };
     });
+  };
+
+  try{
+    // Carrega imediatamente.
+    const initial = await db.list(prefix);
+    renderSlots(initial);
+
+    // Depois mantém sincronizado em tempo real.
+    if(typeof db.watch === 'function'){
+      stopSlotWatch = db.watch(prefix, renderSlots);
+    }
   } catch(err){
     area.innerHTML = `<p class="error-msg">Não foi possível carregar os horários agora. Tente novamente.</p>`;
     console.error('Erro ao carregar horários', err);
@@ -234,40 +297,22 @@ async function submitBooking(){
     return;
   }
 
+  if(!state.date || !state.time){
+    errEl.textContent = 'Escolha uma data e um horário.';
+    errEl.style.display = 'block';
+    return;
+  }
+
   const confirmBtn = document.getElementById('confirmBtn');
   confirmBtn.disabled = true;
   confirmBtn.textContent = 'Confirmando…';
 
   try{
-    const slotKey = `slot:${state.barber}:${state.date}:${state.time}`;
-    // check again right before writing, in case someone else took it
-    let existing = null;
-    try{ existing = await db.get(slotKey, true); } catch(e){ existing = null; }
-    if(existing){
-      errEl.textContent = 'Esse horário acabou de ser reservado por outra pessoa. Escolha outro.';
-      errEl.style.display = 'block';
-      confirmBtn.disabled = false;
-      confirmBtn.textContent = 'Confirmar agendamento';
-      delete bookedSlotsCache[`${state.barber}__${state.date}`];
-      state.step = 3;
-      state.time = null;
-      renderAll();
-      return;
-    }
-
     const service = SERVICES.find(s => s.id === state.service);
     const barber = BARBERS.find(b => b.id === state.barber);
-
-    // ticket number
-    let ticketNum = 101;
-    try{
-      const counterRes = await db.get('ticket-counter', true);
-      ticketNum = counterRes && counterRes.value ? parseInt(counterRes.value, 10) + 1 : 101;
-    } catch(e){ ticketNum = 100 + Math.floor(Math.random()*900); }
-    await db.set('ticket-counter', String(ticketNum), true);
+    const slotKey = `slot:${state.barber}:${state.date}:${state.time}`;
 
     const payload = {
-      ticket: ticketNum,
       service: service.name,
       price: service.price,
       barber: barber.name,
@@ -278,15 +323,51 @@ async function submitBooking(){
       createdAt: new Date().toISOString(),
     };
 
-    const result = await db.set(slotKey, JSON.stringify(payload), true);
-    if(!result){
-      throw new Error('Falha ao salvar o agendamento');
+    // A operação precisa ser atômica no Firestore.
+    // Se alguém ocupar o horário antes desta transação, ela falha.
+    let finalPayload;
+
+    if(typeof db.reserveSlot === 'function'){
+      finalPayload = await db.reserveSlot(slotKey, payload);
+    } else {
+      // Compatibilidade com adapters antigos.
+      const existing = await db.get(slotKey, true).catch(() => null);
+      if(existing){
+        const conflict = new Error('SLOT_TAKEN');
+        conflict.code = 'SLOT_TAKEN';
+        throw conflict;
+      }
+
+      let ticketNum = 101;
+      const counter = await db.get('ticket-counter', true).catch(() => null);
+      if(counter && counter.value){
+        const current = parseInt(counter.value, 10);
+        if(Number.isFinite(current)) ticketNum = current + 1;
+      }
+
+      finalPayload = {...payload, ticket: ticketNum};
+      await db.set('ticket-counter', String(ticketNum), true);
+      await db.set(slotKey, JSON.stringify(finalPayload), true);
     }
 
-    confirmedTicket = payload;
+    confirmedTicket = finalPayload;
+    stopWatchingSlots();
     renderAll();
+
   } catch(err){
     console.error('Erro ao confirmar agendamento', err);
+
+    if(err && (err.code === 'SLOT_TAKEN' || err.message === 'SLOT_TAKEN')){
+      errEl.textContent = 'Esse horário acabou de ser reservado por outra pessoa. Escolha outro.';
+      errEl.style.display = 'block';
+
+      stopWatchingSlots();
+      state.time = null;
+      state.step = 3;
+      renderAll();
+      return;
+    }
+
     errEl.textContent = 'Algo deu errado ao confirmar. Tente novamente.';
     errEl.style.display = 'block';
     confirmBtn.disabled = false;
@@ -296,25 +377,34 @@ async function submitBooking(){
 
 function renderConfirmation(card){
   document.getElementById('stepsTrack').style.display = 'none';
+
   card.innerHTML = `
     <div class="confirm-ticket">
       <div class="ticket-label">Seu horário está reservado</div>
       <div class="ticket-num">Nº ${confirmedTicket.ticket}</div>
       <hr>
-      <div class="ct-row"><span>Serviço</span><span>${confirmedTicket.service}</span></div>
-      <div class="ct-row"><span>Barbeiro</span><span>${confirmedTicket.barber}</span></div>
+      <div class="ct-row"><span>Serviço</span><span>${escapeHtml(confirmedTicket.service)}</span></div>
+      <div class="ct-row"><span>Barbeiro</span><span>${escapeHtml(confirmedTicket.barber)}</span></div>
       <div class="ct-row"><span>Data</span><span>${formatDate(confirmedTicket.date)}</span></div>
-      <div class="ct-row"><span>Horário</span><span>${confirmedTicket.time}</span></div>
+      <div class="ct-row"><span>Horário</span><span>${escapeHtml(confirmedTicket.time)}</span></div>
       <div class="ct-row"><span>Valor</span><span>${money(confirmedTicket.price)}</span></div>
       <hr>
       <p style="font-size:13px; color:var(--text-dim); margin-bottom:20px;">Guarde o número da sua senha. Chegue com 5 minutos de antecedência.</p>
       <button class="btn-primary" id="newBookingBtn" style="width:100%;">Agendar outro horário</button>
     </div>
   `;
+
   document.getElementById('newBookingBtn').onclick = () => {
     confirmedTicket = null;
-    state = { step:1, service:null, barber:BARBERS[0].id, date:'', time:null, name:'', phone:'' };
-    bookedSlotsCache = {};
+    state = {
+      step:1,
+      service:null,
+      barber:BARBERS[0].id,
+      date:'',
+      time:null,
+      name:'',
+      phone:''
+    };
     document.getElementById('stepsTrack').style.display = 'flex';
     renderAll();
     document.getElementById('agendar').scrollIntoView({behavior:'smooth'});
@@ -326,7 +416,6 @@ function renderAll(){
   renderTicketCard();
 }
 
-// ---------------- INIT ----------------
 renderServiceGrid();
 renderBarberGrid();
 renderAll();

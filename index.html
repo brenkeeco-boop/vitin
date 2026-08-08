@@ -11,17 +11,29 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/patch.css">
 </head>
 <body>
 
 <header class="nav">
-  <div class="logo"><span class="mark">BV</span> Barbearia do Vitin</div>
+  <a class="logo" href="index.html#agendar">
+    <span class="mark">BV</span> Barbearia do Vitin
+  </a>
   <ul>
     <li><a href="#servicos">Serviços</a></li>
     <li><a href="#barbeiros">Barbeiros</a></li>
     <li><a href="#agendar">Agendar</a></li>
   </ul>
-  <a class="nav-cta" href="#agendar">Agendar horário</a>
+  <div class="nav-actions">
+    <a class="nav-cta" href="#agendar">Agendar horário</a>
+    <a class="admin-access" href="admin/" aria-label="Painel do barbeiro" title="Painel do barbeiro">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
+        <circle cx="12" cy="5" r="2"/>
+        <circle cx="12" cy="12" r="2"/>
+        <circle cx="12" cy="19" r="2"/>
+      </svg>
+    </a>
+  </div>
 </header>
 
 <section class="hero">
