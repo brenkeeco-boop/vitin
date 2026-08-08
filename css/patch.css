@@ -52,7 +52,25 @@
   line-height:1;
 }
 
-/* Logo agora é um link — mantém a aparência original, sem sublinhado */
+/* Crédito de desenvolvimento no rodapé */
+.f-brand-credit{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:10px;
+}
+.footer-logo-img{
+  width:120px;
+  height:auto;
+  display:block;
+}
+.footer-credit-text{
+  font-family:'JetBrains Mono', monospace;
+  font-size:11px;
+  letter-spacing:0.04em;
+  text-transform:none;
+  color:var(--text-dim);
+}
 .nav a.logo{
   text-decoration:none;
   transition:opacity .2s ease;
