@@ -52,22 +52,22 @@
   line-height:1;
 }
 
-/* Crédito de desenvolvimento no rodapé — discreto, estilo marca d'água */
+/* Crédito de desenvolvimento no rodapé */
 .f-brand-credit{
   display:flex;
   flex-direction:column;
-  align-items:flex-start;
-  gap:6px;
-  opacity:.6;
+  align-items:center;
+  text-align:center;
+  gap:10px;
 }
 .footer-logo-img{
-  width:52px;
+  width:88px;
   height:auto;
   display:block;
 }
 .footer-credit-text{
   font-family:'JetBrains Mono', monospace;
-  font-size:9.5px;
+  font-size:13.5px;
   letter-spacing:0.04em;
   text-transform:none;
   color:var(--text-dim);
