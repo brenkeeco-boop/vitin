@@ -42,6 +42,7 @@
   <p class="lead">Corte tradicional, navalha afiada e um café enquanto espera. Escolha o serviço, o barbeiro e o horário — sem ligação, sem fila.</p>
   <div class="hero-actions">
     <a class="btn-primary" href="#agendar">Agendar meu horário</a>
+    <a class="btn-cancel" href="#cancelar">Cancelar horário</a>
     <a class="btn-ghost" href="#servicos">Ver serviços e preços</a>
   </div>
   <div class="whatsapp-cta-wrap">
@@ -87,6 +88,41 @@
   <div class="ticket-wrap">
     <div class="steps-track" id="stepsTrack"></div>
     <div class="ticket-card" id="ticketCard"></div>
+  </div>
+</section>
+
+<!-- CANCELAMENTO DE AGENDAMENTO -->
+<section id="cancelar" class="cancel-section">
+  <div class="section-head">
+    <p class="eyebrow">Gerencie seu horário</p>
+    <h2>Cancelar horário</h2>
+    <p>Informe o ticket, seu nome e o telefone usado no agendamento.</p>
+  </div>
+
+  <div class="cancel-card">
+    <form id="cancelForm" autocomplete="off">
+      <div class="field">
+        <label for="cancelTicket">Número do ticket</label>
+        <input type="text" id="cancelTicket" inputmode="numeric" placeholder="Ex.: 12" required>
+      </div>
+
+      <div class="field">
+        <label for="cancelName">Nome completo</label>
+        <input type="text" id="cancelName" placeholder="Nome usado no agendamento" required>
+      </div>
+
+      <div class="field">
+        <label for="cancelPhone">Telefone / WhatsApp</label>
+        <input type="tel" id="cancelPhone" placeholder="(61) 99999-9999" required>
+      </div>
+
+      <p class="error-msg" id="cancelError" style="display:none;"></p>
+      <p class="success-msg" id="cancelSuccess" style="display:none;"></p>
+
+      <button type="submit" class="btn-primary" id="findCancelBtn">Consultar agendamento</button>
+    </form>
+
+    <div id="cancelPreview" class="cancel-preview" style="display:none;"></div>
   </div>
 </section>
 

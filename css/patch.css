@@ -80,3 +80,135 @@
 .nav a.logo:focus-visible{
   opacity:.85;
 }
+
+
+/* ---------- CANCELAMENTO DE AGENDAMENTO ---------- */
+.btn-cancel{
+  font-family:'JetBrains Mono', monospace;
+  font-size:13px;
+  letter-spacing:.05em;
+  text-transform:uppercase;
+  background:transparent;
+  color:var(--text);
+  border:1px solid var(--line);
+  padding:16px 24px;
+  border-radius:var(--radius);
+  cursor:pointer;
+  text-decoration:none;
+  display:inline-block;
+  transition:background .2s ease, border-color .2s ease, color .2s ease, transform .15s ease;
+}
+.btn-cancel:hover,
+.btn-cancel:focus-visible{
+  background:rgba(138,50,32,.14);
+  border-color:var(--oxblood);
+  color:#f0b4a8;
+}
+.btn-cancel:disabled{
+  opacity:.55;
+  cursor:not-allowed;
+}
+
+.cancel-section{
+  padding:100px 6vw;
+  border-top:1px solid var(--line);
+  background:var(--surface);
+}
+.cancel-card{
+  width:min(620px,100%);
+  margin:35px auto 0;
+  padding:32px;
+  background:var(--bg);
+  border:1px solid var(--line);
+}
+.cancel-card .btn-primary,
+.cancel-card .btn-cancel{
+  width:100%;
+  text-align:center;
+}
+.cancel-preview{
+  margin-top:24px;
+  padding:22px;
+  border:1px solid var(--line);
+  background:var(--surface);
+}
+.cancel-preview-title{
+  font-family:'Oswald',sans-serif;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+  font-size:22px;
+  color:var(--brass-light);
+  margin-bottom:18px;
+}
+.cancel-preview-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:14px;
+  margin-bottom:18px;
+}
+.cancel-preview-grid div{
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+}
+.cancel-preview-grid span{
+  color:var(--text-dim);
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+}
+.cancel-preview-grid b{
+  color:var(--text);
+  font-size:14px;
+}
+.cancel-preview p{
+  color:var(--text-dim);
+  font-size:13px;
+  margin-bottom:18px;
+}
+.cancel-preview .btn-cancel{
+  border-color:var(--oxblood);
+  color:#f0b4a8;
+}
+.success-msg{
+  color:#9bd49b;
+  border:1px solid rgba(120,190,120,.35);
+  padding:12px 14px;
+  margin-bottom:16px;
+  font-size:13px;
+}
+.confirm-actions{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.confirm-actions .btn-primary,
+.confirm-actions .btn-cancel{
+  width:100%;
+  text-align:center;
+}
+@media(min-width:720px){
+  .confirm-actions{
+    flex-direction:row;
+  }
+}
+@media(max-width:600px){
+  .cancel-section{
+    padding:70px 5vw;
+  }
+  .cancel-card{
+    padding:22px;
+  }
+  .cancel-preview-grid{
+    grid-template-columns:1fr;
+  }
+  .hero .hero-actions{
+    width:100%;
+  }
+  .hero .hero-actions .btn-primary,
+  .hero .hero-actions .btn-cancel,
+  .hero .hero-actions .btn-ghost{
+    width:100%;
+    text-align:center;
+  }
+}
