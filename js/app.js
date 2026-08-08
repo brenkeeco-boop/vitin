@@ -253,7 +253,7 @@ async function loadAndWatchTimeSlots(){
           data-time="${t}"
           ${isBooked?'disabled':''}
           aria-disabled="${isBooked?'true':'false'}"
-        >${t}</button>`;
+        >${isBooked ? `<span class="ts-time">${t}</span><span class="ts-x" aria-hidden="true">✕</span>` : t}</button>`;
       }).join('')}
     </div>`;
 

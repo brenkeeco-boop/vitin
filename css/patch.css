@@ -30,11 +30,26 @@
   .admin-access{width:26px;height:26px;}
 }
 
-/* Horário ocupado */
+/* Horário ocupado — X vermelho visível, sem clique */
 .time-slot.booked{
-  opacity:.3;
-  text-decoration:line-through;
+  position:relative;
+  opacity:.55;
+  text-decoration:none;
   cursor:not-allowed;
+  color:var(--text-dim);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+}
+.time-slot.booked .ts-time{
+  text-decoration:line-through;
+}
+.time-slot.booked .ts-x{
+  color:#e5473a;
+  font-weight:700;
+  font-size:13px;
+  line-height:1;
 }
 
 /* Logo agora é um link — mantém a aparência original, sem sublinhado */
