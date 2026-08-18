@@ -88,7 +88,7 @@ function renderTicketCard(){
   } else if(state.step === 2){
     html = `
       <h3>Escolha a data</h3>
-      <p class="step-sub">Atendemos de terça a sábado. Deslize para ver mais dias.</p>
+      <p class="step-sub">Atendemos todos os dias da semana. Deslize para ver mais dias.</p>
       <div class="date-chip-row" id="dateChipRow">${renderDateChips()}</div>
       <div class="ticket-nav">
         <button class="btn-ghost" id="backBtn">← Voltar</button>
@@ -160,8 +160,8 @@ function toISODate(d){
   return `${y}-${m}-${day}`;
 }
 
-// Gera os próximos dias úteis da barbearia (pula domingo e segunda),
-// olhando N dias corridos à frente pra garantir dias suficientes.
+// Gera os próximos dias corridos disponíveis para agendamento (a barbearia
+// atende todos os dias da semana).
 function getAvailableDates(daysAhead = 21){
   const dates = [];
   const today = new Date();
@@ -170,8 +170,6 @@ function getAvailableDates(daysAhead = 21){
   for(let i = 0; i < daysAhead; i++){
     const d = new Date(today);
     d.setDate(d.getDate() + i);
-    const dow = d.getDay();
-    if(dow === 0 || dow === 1) continue; // fechado domingo e segunda
     dates.push(d);
   }
   return dates;

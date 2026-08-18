@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Barbearia do Vitin</title>
-<meta name="description" content="Barbearia do Vitin — corte tradicional, barba na navalha e agendamento online rápido, sem ligação e sem fila.">
+<title>Vitin Duu Corte</title>
+<meta name="description" content="Vitin Duu Corte — corte tradicional, barba na navalha e agendamento online rápido, sem ligação e sem fila.">
 <!-- Firebase: usado apenas quando o site roda fora do claude.ai, para que os agendamentos
      sejam compartilhados de verdade entre todos os visitantes do site. Veja as instruções
      de configuração no início do arquivo js/db.js. -->
@@ -17,11 +17,13 @@
 
 <header class="nav">
   <a class="logo" href="index.html#agendar">
-    <span class="mark">BV</span> Barbearia do Vitin
+    <img src="assets/vitin-logo.png" alt="Vitin Duu Corte" class="logo-img">
+    Vitin Duu Corte
   </a>
   <ul>
     <li><a href="#servicos">Serviços</a></li>
     <li><a href="#barbeiros">Barbeiros</a></li>
+    <li><a href="#catalogo">Catálogo</a></li>
     <li><a href="#agendar">Agendar</a></li>
   </ul>
   <div class="nav-actions">
@@ -37,7 +39,7 @@
 </header>
 
 <section class="hero">
-  <p class="eyebrow">Barbearia do Vitin — bairro desde 2014</p>
+  <p class="eyebrow">Vitin Duu Corte — barbeiro desde 2024</p>
   <h1>Cabelo e barba<br>no <em>ponto certo</em>.</h1>
   <p class="lead">Corte tradicional, navalha afiada e um café enquanto espera. Escolha o serviço, o barbeiro e o horário — sem ligação, sem fila.</p>
   <div class="hero-actions">
@@ -46,7 +48,7 @@
     <a class="btn-ghost" href="#servicos">Ver serviços e preços</a>
   </div>
   <div class="whatsapp-cta-wrap">
-    <a class="btn-whatsapp" href="https://wa.me/5561999350668" target="_blank" rel="noopener noreferrer" aria-label="Chamar a Barbearia do Vitin no WhatsApp">
+    <a class="btn-whatsapp" href="https://wa.me/5561993323094" target="_blank" rel="noopener noreferrer" aria-label="Chamar a Vitin Duu Corte no WhatsApp">
       <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor" aria-hidden="true">
         <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.87.5 3.63 1.44 5.15L2 22l5.09-1.53a9.87 9.87 0 0 0 4.95 1.33h.01c5.46 0 9.91-4.45 9.91-9.9C21.96 6.44 17.5 2 12.04 2Zm5.8 14.06c-.24.68-1.4 1.3-1.93 1.35-.5.05-1.02.24-3.43-.72-2.9-1.16-4.76-4.09-4.9-4.28-.14-.19-1.17-1.56-1.17-2.98 0-1.42.74-2.11 1-2.4.26-.29.56-.36.75-.36.19 0 .38 0 .55.01.18.01.41-.07.64.49.24.58.81 2 .88 2.14.07.14.12.31.02.5-.1.19-.15.31-.29.48-.14.17-.3.37-.43.5-.14.14-.29.29-.13.57.17.29.75 1.24 1.61 2.01 1.11.99 2.04 1.3 2.33 1.44.29.14.46.12.63-.07.17-.19.72-.84.91-1.13.19-.29.38-.24.63-.14.26.1 1.65.78 1.93.92.29.14.48.21.55.33.07.12.07.69-.17 1.37Z"/>
       </svg>
@@ -55,8 +57,8 @@
   </div>
   <div class="hero-stats">
     <div class="stat"><b>1</b><span>Barbeiro</span></div>
-    <div class="stat"><b>10 anos</b><span>De bairro</span></div>
-    <div class="stat"><b>Ter–Sáb</b><span>Atendimento</span></div>
+    <div class="stat"><b>2 anos</b><span>De bairro</span></div>
+    <div class="stat"><b>Seg–Dom</b><span>Atendimento</span></div>
   </div>
 </section>
 
@@ -76,6 +78,22 @@
     <p>Um atendimento só, do início ao fim — sem trocar de mão no meio do corte.</p>
   </div>
   <div class="barbers-grid" id="barberGrid"></div>
+</section>
+
+<section id="catalogo">
+  <div class="section-head">
+    <p class="eyebrow">Trabalhos recentes</p>
+    <h2>Catálogo</h2>
+    <p>Alguns cortes feitos por aqui — pra você já chegar sabendo o que pedir.</p>
+  </div>
+  <div class="catalog-grid">
+    <img src="assets/catalogo/corte-1.jpg" alt="Corte de cabelo feito na Vitin Duu Corte" loading="lazy">
+    <img src="assets/catalogo/corte-2.jpg" alt="Corte de cabelo feito na Vitin Duu Corte" loading="lazy">
+    <img src="assets/catalogo/corte-3.jpg" alt="Corte de cabelo feito na Vitin Duu Corte" loading="lazy">
+    <img src="assets/catalogo/corte-4.jpg" alt="Corte de cabelo feito na Vitin Duu Corte" loading="lazy">
+    <img src="assets/catalogo/corte-5.jpg" alt="Corte de cabelo feito na Vitin Duu Corte" loading="lazy">
+    <img src="assets/catalogo/corte-6.jpg" alt="Corte de cabelo feito na Vitin Duu Corte" loading="lazy">
+  </div>
 </section>
 
 <section id="agendar" class="booking">
@@ -133,16 +151,12 @@
     <span class="footer-credit-text">Site desenvolvido por Kelve Bertunes</span>
   </div>
   <div class="f-col">
-    <b>Endereço</b>
-    Rua das Tesouras, 128 — Centro
-  </div>
-  <div class="f-col">
     <b>Horário</b>
-    Terça a sábado, 9h às 19h<br>Fechado aos domingos e segundas
+    Segunda a domingo, 9h às 19h
   </div>
   <div class="f-col">
     <b>Contato</b>
-    (11) 4002-8922<br>contato@barbeariadovitin.com.br
+    (61) 99332-3094<br>contato@barbeariadovitin.com.br
   </div>
 </footer>
 

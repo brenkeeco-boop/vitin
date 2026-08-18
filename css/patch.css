@@ -216,3 +216,44 @@
   text-transform:uppercase;
   opacity:.75;
 }
+
+/* Logo real da Vitin Duu Corte no navbar */
+.nav .logo .logo-img{
+  width:34px;
+  height:34px;
+  border-radius:50%;
+  object-fit:cover;
+  border:1.5px solid var(--brass);
+  flex-shrink:0;
+}
+
+/* Galeria do catálogo */
+.catalog-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(220px, 1fr));
+  gap:16px;
+}
+.catalog-grid img{
+  width:100%;
+  aspect-ratio:3/4;
+  object-fit:cover;
+  border-radius:4px;
+  border:1px solid var(--line);
+  display:block;
+  transition:transform .25s ease, border-color .25s ease;
+}
+.catalog-grid img:hover{
+  transform:scale(1.02);
+  border-color:var(--brass);
+}
+
+/* Rodapé com colunas equilibradas (menos colunas depois de tirar o endereço) */
+footer{
+  display:flex;
+  flex-wrap:wrap;
+  gap:32px;
+}
+footer .f-col,
+footer .f-brand-credit{
+  flex:1 1 200px;
+}
