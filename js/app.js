@@ -86,17 +86,10 @@ function renderTicketCard(){
       </div>
     `;
   } else if(state.step === 2){
-    const today = new Date();
-    const minDate = today.toISOString().split('T')[0];
-
     html = `
       <h3>Escolha a data</h3>
-      <p class="step-sub">Atendemos de terça a sábado.</p>
-      <div class="field">
-        <label for="dateInput">Data</label>
-        <input type="date" id="dateInput" min="${minDate}" value="${state.date}">
-        <small id="dateError" class="error-msg" style="display:none;">Fechado às segundas e domingos — escolha outro dia.</small>
-      </div>
+      <p class="step-sub">Atendemos de terça a sábado. Deslize para ver mais dias.</p>
+      <div class="date-chip-row" id="dateChipRow">${renderDateChips()}</div>
       <div class="ticket-nav">
         <button class="btn-ghost" id="backBtn">← Voltar</button>
         <button class="btn-primary" id="nextBtn" ${state.date ? '' : 'disabled style="opacity:0.4;cursor:not-allowed;"'}>Avançar →</button>
@@ -157,6 +150,51 @@ function formatDate(iso){
   return `${d}/${m}/${y}`;
 }
 
+const WEEKDAY_ABBR = ['DOM','SEG','TER','QUA','QUI','SEX','SÁB'];
+const MONTH_ABBR = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+
+function toISODate(d){
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+// Gera os próximos dias úteis da barbearia (pula domingo e segunda),
+// olhando N dias corridos à frente pra garantir dias suficientes.
+function getAvailableDates(daysAhead = 21){
+  const dates = [];
+  const today = new Date();
+  today.setHours(0,0,0,0);
+
+  for(let i = 0; i < daysAhead; i++){
+    const d = new Date(today);
+    d.setDate(d.getDate() + i);
+    const dow = d.getDay();
+    if(dow === 0 || dow === 1) continue; // fechado domingo e segunda
+    dates.push(d);
+  }
+  return dates;
+}
+
+function renderDateChips(){
+  const dates = getAvailableDates();
+  return dates.map(d => {
+    const iso = toISODate(d);
+    const isSelected = state.date === iso;
+    const isToday = iso === toISODate(new Date());
+    return `<button
+      type="button"
+      class="date-chip ${isSelected ? 'selected' : ''}"
+      data-date="${iso}"
+    >
+      <span class="dc-weekday">${isToday ? 'HOJE' : WEEKDAY_ABBR[d.getDay()]}</span>
+      <span class="dc-day">${d.getDate()}</span>
+      <span class="dc-month">${MONTH_ABBR[d.getMonth()]}</span>
+    </button>`;
+  }).join('');
+}
+
 function attachStepHandlers(){
   const backBtn = document.getElementById('backBtn');
   if(backBtn){
@@ -185,24 +223,13 @@ function attachStepHandlers(){
   }
 
   if(state.step === 2){
-    const dateInput = document.getElementById('dateInput');
-
-    dateInput.onchange = () => {
-      const val = dateInput.value;
-      const day = new Date(val + 'T12:00:00').getDay();
-      const err = document.getElementById('dateError');
-
-      if(day === 0 || day === 1){
-        err.style.display = 'block';
-        state.date = '';
-      } else {
-        err.style.display = 'none';
-        state.date = val;
+    document.querySelectorAll('.date-chip').forEach(chip => {
+      chip.onclick = () => {
+        state.date = chip.dataset.date;
         state.time = null;
-      }
-
-      renderAll();
-    };
+        renderAll();
+      };
+    });
   }
 
   if(state.step === 3){

@@ -163,3 +163,56 @@
     width:100%;
   }
 }
+
+/* Seletor de data por chips — substitui o <input type="date"> nativo,
+   que tinha bugs em celulares (ícone invisível no tema escuro, zoom
+   automático no iOS, calendários nativos inconsistentes entre aparelhos). */
+.date-chip-row{
+  display:flex;
+  gap:10px;
+  overflow-x:auto;
+  padding:4px 2px 12px;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:thin;
+}
+.date-chip{
+  flex:0 0 auto;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:2px;
+  min-width:64px;
+  padding:12px 8px;
+  background:var(--surface-2);
+  border:1px solid var(--line);
+  border-radius:4px;
+  color:var(--text);
+  cursor:pointer;
+  font-family:'JetBrains Mono', monospace;
+  transition:border-color .15s ease, background .15s ease;
+}
+.date-chip:hover,
+.date-chip:focus-visible{
+  border-color:var(--brass);
+}
+.date-chip.selected{
+  background:var(--brass-light);
+  border-color:var(--brass-light);
+  color:#201a12;
+}
+.date-chip .dc-weekday{
+  font-size:10px;
+  letter-spacing:.05em;
+  opacity:.75;
+}
+.date-chip .dc-day{
+  font-size:22px;
+  font-weight:700;
+  line-height:1.1;
+}
+.date-chip .dc-month{
+  font-size:10px;
+  text-transform:uppercase;
+  opacity:.75;
+}
