@@ -3,11 +3,15 @@
 // Alterar serviços, o barbeiro ou os horários de atendimento aqui reflete nos dois lugares.
 
 const SERVICES = [
-  { id:'corte', name:'Corte tradicional', desc:'Tesoura e máquina, acabamento na navalha.', price:45, duration:30 },
-  { id:'barba', name:'Barba desenhada', desc:'Toalha quente, navalha e óleo pós-barba.', price:35, duration:20 },
-  { id:'combo', name:'Corte + Barba', desc:'O combo completo, com desconto.', price:70, duration:50 },
-  { id:'sobrancelha', name:'Sobrancelha', desc:'Alinhamento na navalha.', price:15, duration:10 },
-  { id:'pezinho', name:'Acabamento (pezinho)', desc:'Manutenção rápida de contorno.', price:20, duration:10 },
+  { id:'corte-degrade', name:'Corte degradê', desc:'Fade bem definido, acabamento na navalha.', price:30, duration:40 },
+  { id:'corte-social', name:'Corte social', desc:'Corte clássico, alinhado e discreto.', price:25, duration:30 },
+  { id:'maquina-geral', name:'Máquina geral', desc:'Acabamento uniforme, direto na máquina.', price:20, duration:20 },
+  { id:'sobrancelha', name:'Sobrancelha', desc:'Alinhamento na navalha.', price:10, duration:10 },
+  { id:'barba-desenhada', name:'Barba desenhada', desc:'Toalha quente, navalha e óleo pós-barba.', price:20, duration:20 },
+  { id:'pigmentacao', name:'Pigmentação', desc:'Disfarça falhas e uniformiza a cor.', price:20, duration:30 },
+  { id:'luzes', name:'Luzes', desc:'Mechas e luzes personalizadas.', price:80, duration:90 },
+  { id:'nevou', name:'Nevou', desc:'Descoloração completa, efeito nevado.', price:100, duration:120 },
+  { id:'selagem-progressiva', name:'Selagem/progressiva', desc:'Alinhamento e redução de volume.', price:60, duration:90 },
 ];
 
 const BARBERS = [
