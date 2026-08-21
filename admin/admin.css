@@ -80,4 +80,43 @@
   padding:10px 6px;
   text-align:center;
   border-radius:2px;
+  cursor:pointer;
+  transition:border-color .15s, color .15s, background .15s;
+}
+.free-slot-badge:hover{
+  border-color:var(--oxblood);
+  color:#e18b73;
+  background:rgba(225,139,115,.08);
+}
+
+/* ---- horário bloqueado (dentro da lista de agendamentos do dia) ---- */
+.booked-item-blocked .bi-time{ color:var(--text-dim); }
+.booked-item-blocked .bi-name{ color:#e18b73; }
+.booked-item-blocked{ opacity:.85; }
+
+/* ---- ações de bloquear/desbloquear o dia inteiro ---- */
+.admin-day-actions{
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:12px;
+  margin-bottom:36px;
+}
+.admin-day-msg{
+  font-family:'JetBrains Mono', monospace;
+  font-size:12px;
+  color:var(--text-dim);
+}
+
+/* ---- agendamento manual ---- */
+.admin-manual-card{ margin-top:24px; }
+.admin-manual-card select{
+  width:100%;
+  background:var(--surface-2);
+  border:1px solid var(--line);
+  color:var(--text);
+  padding:13px 14px;
+  font-family:'Inter', sans-serif;
+  font-size:15px;
+  border-radius:2px;
 }

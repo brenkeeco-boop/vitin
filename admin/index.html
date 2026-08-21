@@ -59,6 +59,12 @@
       <input type="date" id="adminDateInput">
     </div>
 
+    <div class="admin-day-actions">
+      <button type="button" class="btn-danger-outline" id="blockDayBtn">Bloquear o dia inteiro</button>
+      <button type="button" class="btn-ghost" id="unblockDayBtn">Desbloquear o dia</button>
+      <span class="admin-day-msg" id="dayActionMsg"></span>
+    </div>
+
     <div class="admin-grid">
       <div class="ticket-card">
         <h3>Agendamentos do dia</h3>
@@ -71,6 +77,31 @@
         <p class="step-sub" id="freeCountLabel">—</p>
         <div id="freeList" class="time-grid"><p class="loading-msg">Carregando…</p></div>
       </div>
+    </div>
+
+    <div class="ticket-card admin-manual-card">
+      <h3>Adicionar agendamento manual</h3>
+      <p class="step-sub">Pra quando o cliente marca por telefone ou pessoalmente.</p>
+      <form id="manualBookingForm">
+        <div class="field">
+          <label for="manualTimeSelect">Horário</label>
+          <select id="manualTimeSelect" required></select>
+        </div>
+        <div class="field">
+          <label for="manualServiceSelect">Serviço</label>
+          <select id="manualServiceSelect" required></select>
+        </div>
+        <div class="field">
+          <label for="manualNameInput">Nome do cliente</label>
+          <input type="text" id="manualNameInput" placeholder="Nome completo" required>
+        </div>
+        <div class="field">
+          <label for="manualPhoneInput">Telefone / WhatsApp</label>
+          <input type="tel" id="manualPhoneInput" placeholder="(61) 99999-9999" required>
+        </div>
+        <p class="error-msg" id="manualFormError" style="display:none;"></p>
+        <button type="submit" class="btn-primary" id="manualSubmitBtn">Adicionar agendamento</button>
+      </form>
     </div>
   </section>
 

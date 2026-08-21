@@ -19,7 +19,66 @@ const db = (function(){
     typeof window.storage.get === 'function';
 
   if(hasNativeStorage){
-    return window.storage;
+    return {
+      get: (...args) => window.storage.get(...args),
+      set: (...args) => window.storage.set(...args),
+      delete: (...args) => window.storage.delete(...args),
+      list: (...args) => window.storage.list(...args),
+
+      // window.storage não tem "watch" nativo — simulamos com polling.
+      watch(prefix, callback){
+        let last = '';
+        const refresh = async () => {
+          const result = await window.storage.list(prefix, true);
+          const signature = JSON.stringify((result && result.keys) || []);
+          if(signature !== last){
+            last = signature;
+            callback(result || { keys: [] });
+          }
+        };
+        refresh();
+        const timer = setInterval(refresh, 1500);
+        return () => clearInterval(timer);
+      },
+
+      async reserveSlot(slotKey, payload){
+        let existing = null;
+        try{ existing = await window.storage.get(slotKey, true); } catch(e){ existing = null; }
+
+        if(existing){
+          const error = new Error('SLOT_ALREADY_BOOKED');
+          error.code = 'SLOT_ALREADY_BOOKED';
+          throw error;
+        }
+
+        let ticketNum = 101;
+        try{
+          const counterRes = await window.storage.get('ticket-counter', true);
+          const n = counterRes && parseInt(counterRes.value, 10);
+          if(Number.isFinite(n)) ticketNum = n + 1;
+        } catch(e){ /* contador ainda não existe — começa em 101 */ }
+
+        const finalPayload = { ...payload, ticket: ticketNum };
+        await window.storage.set(slotKey, JSON.stringify(finalPayload), true);
+        await window.storage.set('ticket-counter', String(ticketNum), true);
+        return finalPayload;
+      },
+
+      async blockSlot(slotKey, payload){
+        let existing = null;
+        try{ existing = await window.storage.get(slotKey, true); } catch(e){ existing = null; }
+
+        if(existing){
+          const error = new Error('SLOT_ALREADY_BOOKED');
+          error.code = 'SLOT_ALREADY_BOOKED';
+          throw error;
+        }
+
+        const finalPayload = { ...payload, blocked: true };
+        await window.storage.set(slotKey, JSON.stringify(finalPayload), true);
+        return finalPayload;
+      }
+    };
   }
 
   const firebaseReady =
@@ -211,6 +270,34 @@ const db = (function(){
 
           return finalPayload;
         });
+      },
+
+      // ------------------------------------------------
+      // BLOQUEIO DE HORÁRIO (usado pelo painel do barbeiro)
+      // ------------------------------------------------
+      // Mesma proteção contra corrida do reserveSlot, mas não
+      // consome número de ticket — bloqueios não são agendamentos.
+      async blockSlot(slotKey, payload){
+
+        const slotRef = col.doc(encodeKey(slotKey));
+
+        return await firestore.runTransaction(async transaction => {
+          const slotDoc = await transaction.get(slotRef);
+
+          if(slotDoc.exists){
+            const error = new Error('SLOT_ALREADY_BOOKED');
+            error.code = 'SLOT_ALREADY_BOOKED';
+            throw error;
+          }
+
+          const finalPayload = { ...payload, blocked: true };
+
+          transaction.set(slotRef, {
+            value: JSON.stringify(finalPayload)
+          });
+
+          return finalPayload;
+        });
       }
 
 
@@ -297,7 +384,7 @@ const db = (function(){
         ){
 
           keys.push(
-            k.slice(PREFIX.length)
+            k.slice(search.length)
           );
 
         }
@@ -382,6 +469,36 @@ const db = (function(){
       localStorage.setItem(
         PREFIX + 'ticket-counter',
         String(ticketNum)
+      );
+
+      return finalPayload;
+
+    },
+
+    // Bloqueio de horário — usado pelo painel do barbeiro.
+    async blockSlot(slotKey, payload){
+
+      const existing =
+        localStorage.getItem(
+          PREFIX + slotKey
+        );
+
+      if(existing){
+        const error =
+          new Error('SLOT_ALREADY_BOOKED');
+        error.code =
+          'SLOT_ALREADY_BOOKED';
+        throw error;
+      }
+
+      const finalPayload = {
+        ...payload,
+        blocked: true
+      };
+
+      localStorage.setItem(
+        PREFIX + slotKey,
+        JSON.stringify(finalPayload)
       );
 
       return finalPayload;
